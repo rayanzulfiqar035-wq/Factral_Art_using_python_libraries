@@ -1,0 +1,145 @@
+"""
+Barnsley Fern Circle - Diagonal Trio (Animated)
+-------------------------------------------------
+Animates the chaos-game point cloud building up from nothing into the
+three-circle diagonal composition: points accumulate frame by frame for
+every frond simultaneously until the full mandala trio is formed.
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.patches import Circle
+
+
+# ---------------------------------------------------------------- fractal --
+def barnsley_fern(n_points=6_000, seed=None):
+    rng = np.random.default_rng(seed)
+    x, y = 0.0, 0.0
+    points = np.empty((n_points, 2), dtype=np.float64)
+
+    for i in range(n_points):
+        r = rng.random()
+
+        if r < 0.01:
+            x_new, y_new = 0.0, 0.16 * y
+        elif r < 0.86:
+            x_new = 0.85 * x + 0.04 * y
+            y_new = -0.04 * x + 0.85 * y + 1.6
+        elif r < 0.93:
+            x_new = 0.20 * x - 0.26 * y
+            y_new = 0.23 * x + 0.22 * y + 1.6
+        else:
+            x_new = -0.15 * x + 0.28 * y
+            y_new = 0.26 * x + 0.24 * y + 0.44
+
+        x, y = x_new, y_new
+        points[i] = (x, y)
+
+    return points
+
+
+def rotate(points, angle_deg):
+    theta = np.radians(angle_deg)
+    c, s = np.cos(theta), np.sin(theta)
+    rot = np.array([[c, -s], [s, c]])
+    return points @ rot.T
+
+
+def build_circle_bouquet(n_ferns=16, base_points=6_000, scale=0.42, seed=7,
+                          center=(0.0, 0.0)):
+    rng = np.random.default_rng(seed)
+    angles = np.linspace(0, 360, n_ferns, endpoint=False)
+    fan_colors = plt.cm.summer(np.linspace(0, 1, n_ferns, endpoint=False))
+    cx, cy = center
+
+    fronds = []
+    for i, angle in enumerate(angles):
+        jitter_scale = 1.0 + rng.uniform(-0.08, 0.08)
+        jitter_angle = angle + rng.uniform(-3, 3)
+
+        pts = barnsley_fern(n_points=base_points, seed=int(rng.integers(1e6)))
+        pts = rotate(pts, jitter_angle) * scale * jitter_scale
+        pts = pts + np.array([cx, cy])
+        fronds.append((pts, fan_colors[i], 0.35))
+
+    return fronds
+
+
+# --------------------------------------------------------------- animate ---
+def render_animation(out_path="barnsley_fern_circle_diagonal_trio.gif",
+                      n_frames=45, hold_frames=16, fps=14):
+    placements = [
+        (-6.0, -6.0, 0.80, 11),   # bottom-left, smaller
+        ( 0.0,  0.0, 1.00, 7),    # center, largest
+        ( 6.0,  6.0, 0.80, 23),   # top-right, smaller
+    ]
+
+    base_points = 3_500
+    all_fronds = []
+    for cx, cy, size_scale, seed in placements:
+        fronds = build_circle_bouquet(
+            n_ferns=16, base_points=base_points,
+            scale=0.42 * size_scale, seed=seed, center=(cx, cy),
+        )
+        all_fronds.extend(fronds)
+
+    fig, ax = plt.subplots(figsize=(10, 10), dpi=130, facecolor="black")
+    ax.set_facecolor("black")
+    ax.set_aspect("equal")
+    ax.axis("off")
+    lim = 11.5
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, lim)
+
+    # glow circles fade in with overall progress
+    glow_patches = []
+    for cx, cy, size_scale, seed in placements:
+        for r, a in zip([2.2, 1.5, 0.9, 0.4], [0.05, 0.08, 0.12, 0.18]):
+            patch = Circle((cx, cy), r * size_scale, color="#2ecc71",
+                            alpha=0.0, zorder=1)
+            ax.add_patch(patch)
+            glow_patches.append((patch, a))
+
+    scat = ax.scatter([], [], s=0.15, edgecolors="none", zorder=2)
+
+    total_seq_frames = n_frames + hold_frames
+
+    def update(frame):
+        progress = min(frame / n_frames, 1.0)
+
+        xs, ys, cs = [], [], []
+        for pts, color, alpha in all_fronds:
+            k = int(len(pts) * progress)
+            if k > 0:
+                xs.append(pts[:k, 0])
+                ys.append(pts[:k, 1])
+                rgba = np.tile(color, (k, 1))
+                rgba[:, 3] = alpha
+                cs.append(rgba)
+
+        if xs:
+            offsets = np.column_stack([np.concatenate(xs), np.concatenate(ys)])
+            colors = np.concatenate(cs)
+            scat.set_offsets(offsets)
+            scat.set_facecolor(colors)
+        else:
+            scat.set_offsets(np.empty((0, 2)))
+
+        for patch, target_a in glow_patches:
+            patch.set_alpha(target_a * progress)
+
+        return (scat, *[p for p, _ in glow_patches])
+
+    anim = animation.FuncAnimation(
+        fig, update, frames=total_seq_frames, blit=False, interval=1000 / fps
+    )
+
+    writer = animation.PillowWriter(fps=fps)
+    anim.save(out_path, writer=writer)
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    render_animation()
+    print("Saved animation -> barnsley_fern_circle_diagonal_trio.gif")
