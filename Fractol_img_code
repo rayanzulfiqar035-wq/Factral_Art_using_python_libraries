@@ -1,0 +1,122 @@
+"""
+Barnsley Fern Circle - Diagonal Trio
+-------------------------------------
+Places three of the circular fern mandalas along the main diagonal
+(bottom-left to top-right) of a single canvas. The center circle is
+the largest/most prominent; the two at the edges are slightly smaller,
+so the eye reads a size progression running along the diagonal.
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
+
+
+# ---------------------------------------------------------------- fractal --
+def barnsley_fern(n_points=60_000, seed=None):
+    """Generate n_points (x, y) coordinates of a single Barnsley fern."""
+    rng = np.random.default_rng(seed)
+    x, y = 0.0, 0.0
+    points = np.empty((n_points, 2), dtype=np.float64)
+
+    for i in range(n_points):
+        r = rng.random()
+
+        if r < 0.01:                                    # stem
+            x_new, y_new = 0.0, 0.16 * y
+        elif r < 0.86:                                    # leaflets
+            x_new = 0.85 * x + 0.04 * y
+            y_new = -0.04 * x + 0.85 * y + 1.6
+        elif r < 0.93:                                      # left leaflet
+            x_new = 0.20 * x - 0.26 * y
+            y_new = 0.23 * x + 0.22 * y + 1.6
+        else:                                                # right leaflet
+            x_new = -0.15 * x + 0.28 * y
+            y_new = 0.26 * x + 0.24 * y + 0.44
+
+        x, y = x_new, y_new
+        points[i] = (x, y)
+
+    return points
+
+
+def rotate(points, angle_deg):
+    theta = np.radians(angle_deg)
+    c, s = np.cos(theta), np.sin(theta)
+    rot = np.array([[c, -s], [s, c]])
+    return points @ rot.T
+
+
+# ------------------------------------------------------------ circle bouquet --
+def build_circle_bouquet(n_ferns=16, base_points=45_000, scale=0.42, seed=7):
+    """
+    Return a list of (points, color, alpha) with fronds arranged evenly
+    around a full 360-degree circle, all growing outward from the same
+    center point like a radial mandala.
+    """
+    rng = np.random.default_rng(seed)
+    angles = np.linspace(0, 360, n_ferns, endpoint=False)
+
+    fan_colors = plt.cm.summer(np.linspace(0, 1, n_ferns, endpoint=False))
+
+    fronds = []
+    for i, angle in enumerate(angles):
+        jitter_scale = 1.0 + rng.uniform(-0.08, 0.08)
+        jitter_angle = angle + rng.uniform(-3, 3)
+
+        pts = barnsley_fern(n_points=base_points, seed=int(rng.integers(1e6)))
+        pts = rotate(pts, jitter_angle) * scale * jitter_scale
+        fronds.append((pts, fan_colors[i], 0.35))
+
+    return fronds
+
+
+# ---------------------------------------------------------- diagonal render --
+def render_diagonal_trio(out_path="barnsley_fern_circle_diagonal_trio.png"):
+    """
+    Draw three fern-circle mandalas along the main diagonal of one canvas.
+    Center circle is largest; the two edge circles are slightly smaller.
+    """
+    fig, ax = plt.subplots(figsize=(14, 14), dpi=200, facecolor="black")
+    ax.set_facecolor("black")
+
+    # (center_x, center_y, radius_scale, base_points_scale, seed)
+    placements = [
+        (-6.0, -6.0, 0.80, 0.75, 11),   # bottom-left, smaller
+        ( 0.0,  0.0, 1.00, 1.00, 7),    # center, largest
+        ( 6.0,  6.0, 0.80, 0.75, 23),   # top-right, smaller
+    ]
+
+    for cx, cy, size_scale, points_scale, seed in placements:
+        base_points = int(45_000 * points_scale)
+        frond_scale = 0.42 * size_scale
+        fronds = build_circle_bouquet(
+            n_ferns=16, base_points=base_points, scale=frond_scale, seed=seed
+        )
+
+        # glow at this circle's own center
+        for r, a in zip([2.2, 1.5, 0.9, 0.4], [0.05, 0.08, 0.12, 0.18]):
+            ax.add_patch(
+                Circle((cx, cy), r * size_scale, color="#2ecc71", alpha=a, zorder=1)
+            )
+
+        for pts, color, alpha in fronds:
+            ax.scatter(
+                pts[:, 0] + cx, pts[:, 1] + cy,
+                s=0.15, color=color, alpha=alpha, edgecolors="none", zorder=2,
+            )
+
+    ax.set_aspect("equal")
+    ax.axis("off")
+    lim = 11.5
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, lim)
+
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=200, facecolor="black", bbox_inches="tight")
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    render_diagonal_trio()
+    print("Composed diagonal trio -> barnsley_fern_circle_diagonal_trio.png")
