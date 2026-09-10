@@ -41,6 +41,12 @@ Rather than rendering a single standalone fern frond, this algorithm builds thre
 
 ---
 
+## 🛠️ Hoodie Design with Fractal Art with Gemini Banana Pro
+<img width="1024" height="1024" alt="Gemini_Generated_Image_maxumqmaxumqmaxu" src="https://github.com/user-attachments/assets/df9bfa91-0635-4ca5-a1a1-f9e8d5bcf3d6" />
+<img width="1024" height="1024" alt="Gemini_Generated_Image_3ethqw3ethqw3eth" src="https://github.com/user-attachments/assets/84fbbb8d-0095-4bb7-8ae7-0a6c23119021" />
+
+---
+
 ## ⚙️ Setup and Run Instructions
 
 ### Prerequisites
