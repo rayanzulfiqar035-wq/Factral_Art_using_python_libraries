@@ -16,9 +16,8 @@ Rather than rendering a single standalone fern frond, this algorithm builds thre
 
 ## Visual Previews
 
-|(<img width="2779" height="2780" alt="barnsley_fern_circle_diagonal_trio" src="https://github.com/user-attachments/assets/510f7d53-223c-4925-b5d4-aeb4cb79cf8a" />
-) |(<img width="1300" height="1300" alt="barnsley_fern_circle_diagonal_trio" src="https://github.com/user-attachments/assets/a1872fbc-a0a2-4c22-905c-94baa0371c64" />
-) |
+<img width="2779" height="2780" alt="barnsley_fern_circle_diagonal_trio" src="https://github.com/user-attachments/assets/510f7d53-223c-4925-b5d4-aeb4cb79cf8a" />
+<img width="1300" height="1300" alt="barnsley_fern_circle_diagonal_trio" src="https://github.com/user-attachments/assets/a1872fbc-a0a2-4c22-905c-94baa0371c64" />
 
 ---
 
